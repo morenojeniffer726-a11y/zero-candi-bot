@@ -13,7 +13,6 @@ WHATSAPP_TOKEN = "EAAUV6d9auksBSrAT7SksGzBG8sa6EvodZC4oPePCK8DCKszquGSeNuKEZBrCS
 PHONE_NUMBER_ID = "1316482411550878"
 
 # Memoria temporal de fases por número de teléfono
-# Estados: 0=Inicio/Apertura, 1=Validación Profunda, 2=Autoridad y Solución, 3=Oferta Irresistible, 4=Cierre de Pago, 5=Entrega de Plataforma
 USUARIOS_FASE = {}
 
 @app.route('/', methods=['GET'])
@@ -38,110 +37,116 @@ def receive_message():
         if 'messages' in changes:
             mensaje_entrada = changes['messages'][0]
             numero_remitente = mensaje_entrada['from']
-            texto_usuario = mensaje_entrada['text']['body'].lower().strip()
             
-            print(f"Mensaje recibido de {numero_remitente}: {texto_usuario}")
+            # Detectar si es texto o imagen (comprobante)
+            tipo_mensaje = mensaje_entrada.get('type')
+            texto_usuario = ""
+            
+            if tipo_mensaje == 'text':
+                texto_usuario = mensaje_entrada['text']['body'].lower().strip()
+            elif tipo_mensaje == 'image':
+                texto_usuario = "[imagen_enviada]"
+            
+            print(f"[{tipo_mensaje.upper()}] Recibido de {numero_remitente}: {texto_usuario}")
             
             # Obtener o inicializar la fase del usuario
             fase_actual = USUARIOS_FASE.get(numero_remitente, 0)
             
-            # Procesar el cerebro comercial de Jeniffer según la fase
+            # Si mandó una imagen, forzamos la fase de validación de pago / entrega
+            if tipo_mensaje == 'image':
+                fase_actual = 5
+            
+            # Procesar el cerebro comercial de Jeniffer
             respuesta_texto, nueva_fase = motor_neuro_ventas(texto_usuario, fase_actual)
             
-            # Actualizar la fase del cliente
+            # Actualizar la fase
             USUARIOS_FASE[numero_remitente] = nueva_fase
             
-            # Retraso humano de 15 segundos para máxima naturalidad
+            # Retraso humano de 15 segundos
             print("Aplicando pausa humana de 15 segundos...")
             time.sleep(15)
             
-            # Enviar respuesta por la API Cloud de Meta
+            # Enviar respuesta por WhatsApp
             enviar_mensaje_whatsapp(numero_remitente, respuesta_texto)
             
-    except (KeyError, IndexError):
+    except (KeyError, IndexError) as e:
+        print(f"Error procesando webhook: {str(e)}")
         pass
         
     return jsonify({"status": "received"}), 200
 
 def motor_neuro_ventas(texto, fase):
     """
-    Motor consultivo de ventas con el guión exacto de Jeniffer y progresión por fases.
+    Motor optimizado: Textos cortos, directos al pulgar y manejo de imágenes.
     """
-    # Manejo de objeción de dinero o dudas puntuales en cualquier momento
-    if "dinero" in texto or "plata" in texto or "caro" in texto or "esperar" in texto or "quincena" in texto:
+    # Manejo de objeción de dinero
+    if any(p in texto for p in ["dinero", "plata", "caro", "esperar", "quincena"]):
         return (
             "Entiendo perfectamente, la situación está difícil. " +
             "¿Te parece si te guardo la promoción y te contacto en la quincena para que no pierdas tu cupo clínico?"
         ), fase
 
-    # FASE 1: APERTURA (Si saluda o pide info por primera vez)
+    # FASE 0: APERTURA
     if fase == 0 or any(p in texto for p in ["hola", "info", "información", "precio", "programa", "cándida", "candida", "empezar"]):
         return (
             "Hola, soy Jeniffer 😊 Gracias por su confianza. " +
-            "Mire, si usted ha probado óvulos, cremas y tratamientos médicos por más de 5 meses y el problema siempre regresa, " +
-            "créame que la entiendo a la perfección porque yo viví ese mismo desgaste físico y emocional. " +
-            "Cuénteme con confianza... ¿Siente que gasta dinero en farmacias y el ardor o la picazón jamás se van por completo?"
+            "Mire, si usted ha probado óvulos y cremas por más de 5 meses y el problema regresa, la entiendo porque viví ese mismo desgaste. " +
+            "Cuénteme... ¿Siente que gasta dinero en farmacias y el ardor o la picazón no se van?"
         ), 1
 
-    # FASE 2: VALIDACIÓN PROFUNDA (El desahogo íntimo tras la respuesta de la fase 1)
+    # FASE 1: VALIDACIÓN PROFUNDA
     elif fase == 1:
         return (
-            "Es desesperante, ¿verdad? Uno llega a un punto de frustración donde ya ni disfruta de su intimidad por miedo al dolor o al rechazo. " +
+            "Es desesperante, ¿verdad? Uno ya ni disfruta de su intimidad por miedo al dolor. " +
             "Cuénteme, ¿cómo es ese flujo que le molesta y cuánto tiempo lleva atrapada en este ciclo?"
         ), 2
 
-    # FASE 3: LA AUTORIDAD Y LA SOLUCIÓN CLÍNICA
+    # FASE 2: SOLUCIÓN CLÍNICA
     elif fase == 2:
         return (
-            "Mire, la razón por la que los tratamientos comunes fallan es porque solo tapan el síntoma superficial sin limpiar el ecosistema vaginal. " +
-            "Nosotros aplicamos un protocolo avanzado a base de ácido bórico de grado médico que neutraliza el pH y erradica el hongo de raíz. " +
-            "¿Usted quiere recuperar su salud íntima y volver a sentirse limpia y segura de una vez por todas?"
+            "Los tratamientos comunes fallan porque solo tapan el síntoma sin limpiar el ecosistema. " +
+            "Nuestro protocolo de ácido bórico de grado médico neutraliza el pH y erradica el hongo de raíz. " +
+            "¿Usted quiere recuperar su salud íntima de una vez por todas?"
         ), 3
 
-    # FASE 4: LA OFERTA IRRESISTIBLE
+    # FASE 3: OFERTA IRRESISTIBLE (Versión corta de alto impacto)
     elif fase == 3 or any(p in texto for p in ["sí", "si", "quiero", "claro", "estoy lista", "seguro"]):
-        oferta_texto = (
-            "Perfecto, esa es la decisión de una mujer valiente que no se resigna a vivir a medias\n\n" +
-            "Normalmente este programa clínico especializado cuesta 25$. Pero hoy para que Usted comience su recuperación total, le daré acceso al **PROGRAMA ZERO CANDI** por solo 7.99$ (tasa BCV).\n\n" +
-            "🧬 **PROGRAMA ZERO CANDI**. Incluye acceso a:\n\n" +
-            "✅ **Protocolo de Limpieza:** Acceso a nuestro programa donde te enseñamos exactamente qué comprar, cómo preparar y cómo utilizar los componentes de ácido bórico para limpiar y restaurar tu vagina de forma segura.\n" +
-            "🥗 **Recetario Exclusivo Anti-Cándida (15 Opciones):** Opciones deliciosas y prácticas libres de azúcares y harinas para cortar el alimento del hongo desde la cocina.\n" +
-            "📋 **Checklist Diario de Control:** Una bitácora interactiva para que lleves el seguimiento exacto del día a día y no se te olvide ningún paso clave.\n" +
-            "💡 **Sesión de Consejos Fundamentales:** Guía de hábitos esenciales para garantizar que todo el protocolo funcione al 100%.\n\n" +
-            "POR TAN SOLO: 7.99$ (BCV)\n\n" +
-            "🔓 Todo respaldado con una Garantía Blindada de 20 días (Cero riesgo para su bolsillo).\n\n" +
-            "Dígame una sola cosa con el corazón en la mano... ¿Sí o sí está lista para asegurar hoy mismo una solución definitiva y dejar atrás este tormento?"
-        )
-        return oferta_texto, 4
+        return (
+            "¡Excelente decisión! No se resigne a vivir a medias.\n\n" +
+            "El **PROGRAMA ZERO CANDI** incluye:\n" +
+            "✅ Protocolo exacto de Ácido Bórico.\n" +
+            "🥗 Recetario Anti-Cándida (15 opciones).\n" +
+            "📋 Checklist interactivo diario.\n" +
+            "🔓 Garantía Blindada de 20 días.\n\n" +
+            "🔥 **Precio especial hoy: 7.99$ (Tasa BCV)** en lugar de 25$.\n\n" +
+            "¿Sí o sí está lista para asegurar hoy su solución definitiva?"
+        ), 4
 
-    # FASE 5: CIERRE DE PAGO Y DATOS BANCARIOS
-    elif fase == 4 and any(p in texto for p in ["sí", "si", "estoy", "listas", "comprar", "pago", "datos"]):
-        pago_texto = (
-            "¡Esa es la actitud! Usted no arriesga absolutamente nada, yo misma la respaldo. Aquí tiene los datos para el pago móvil:\n\n" +
-            "🏦 Mercantil\n" +
+    # FASE 4: DATOS DE PAGO
+    elif fase == 4 and any(p in texto for p in ["sí", "si", "estoy", "listas", "comprar", "pago", "datos", "explícame", "explicame"]):
+        return (
+            "¡Así se habla! Usted no arriesga nada, yo la respaldo.\n\n" +
+            "🏦 *Pago Móvil Mercantil*\n" +
             "🪪 25771166\n" +
-            "📞 04121582154\n\n" +
-            "Apenas me envíe la foto del comprobante por aquí, le activo su acceso inmediato a nuestra plataforma. ¿El pago lo hace Usted misma o se lo hace alguien más?"
-        )
-        return pago_texto, 5
+            "📞 04121582154\n" +
+            "Monto: 7.99$ (o su equivalente en Bs tasa BCV).\n\n" +
+            "Apenas me envíe la foto del comprobante aquí, le activo su acceso de inmediato. ¿El pago lo hace Usted?"
+        ), 5
 
-    # FASE 6: LÓGICA DE ENTREGA (Tras recibir el comprobante o confirmación de pago)
-    elif fase == 5 or any(p in texto for p in ["pago", "listo", "transferencia", "comprobante", "captura", "ya pagué"]):
-        entrega_texto = (
-            "¡Felicidades por dar este gran paso hacia su bienestar! Su usuario ya está activo en nuestra app innovadora de alta tecnología. Puede ingresar directamente aquí:\n" +
+    # FASE 5: ENTREGA DE PLATAFORMA (Se activa con texto o cuando mandan la foto)
+    elif fase == 5 or texto == "[imagen_enviada]" or any(p in texto for p in ["pago", "listo", "transferencia", "comprobante", "captura", "ya pagué"]):
+        return (
+            "¡Comprobante recibido con éxito! Felicidades por dar este gran paso. 🚀\n\n" +
+            "Su usuario ya está activo en nuestra app:\n" +
             "https://candida-zero.vercel.app/\n\n" +
-            "📱 **Indicaciones de uso:**\n" +
-            "1. Abra el enlace desde su teléfono móvil.\n" +
-            "2. Explore de inmediato todo el contenido: el protocolo de limpieza y restauración vaginal, descargue su checklist diario, revise las 15 recetas y lea los consejos fundamentales.\n\n" +
-            "Así recuperé mi salud desde casa. ¿Me confirma por favor si logró ingresar y abrir la plataforma sin problemas?"
-        )
-        return entrega_texto, 5
+            "Abra el enlace desde su teléfono para ver su protocolo y recetario. ¿Me confirma si logró ingresar sin problemas?"
+        ), 5
 
-    # Comodín en caso de desvío
+    # Comodín
     else:
         return (
-            "¿Vio por qué los tratamientos tradicionales son solo un parche temporal y regular el pH vaginal de raíz es lo único que frena la infección para siempre? " +
-            "Dígame qué le pareció para explicarle cómo nuestro sistema logra ese mismo efecto clínico desde casa."
+            "¿Vio por qué regular el pH vaginal de raíz es lo único que frena la infección para siempre? " +
+            "Dígame, ¿le quedan dudas sobre el protocolo en casa?"
         ), fase
 
 def enviar_mensaje_whatsapp(destinatario, texto):
