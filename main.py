@@ -76,42 +76,58 @@ def receive_message():
 
 def motor_neuro_ventas(texto, fase):
     """
-    Motor de neuro-ventas con historia de autoridad, oferta equilibrada y transiciones blindadas.
+    Motor de neuro-ventas optimizado con manejo inteligente de preguntas y objeciones.
     """
-    # Manejo global de objeción de dinero
+    # 1. Manejo global de objeción de dinero
     if any(p in texto for p in ["dinero", "plata", "caro", "esperar", "quincena"]):
         return (
             "Entiendo perfectamente, la situación está difícil. " +
             "¿Te parece si te guardo la promoción y te contacto en la quincena para que no pierdas tu cupo clínico?"
         ), fase
 
-    # FASE 0: APERTURA (Empatía y dolor)
+    # 2. Manejo de preguntas generales en cualquier momento de la conversación (Faq inteligente)
+    if any(p in texto for p in ["cómo se usa", "como se usa", "aplicacion", "aplicación", "dónde se compra", "donde se compra", "ingredientes", "seguro"]):
+        return (
+            "Es un tratamiento 100% seguro y muy fácil de aplicar en la comodidad de tu hogar. " +
+            "Te indicamos exactamente qué adquirir en farmacias y el paso a paso detallado en la app. " +
+            "¿Te gustaría que avancemos para darte acceso inmediato al protocolo?"
+        ), fase
+
+    if any(p in texto for p in ["cuánto tiempo", "cuanto tiempo", "días", "dias", "funciona rápido", "resultados"]):
+        The_response = (
+            "La mayoría de nuestras pacientes sienten un alivio radical y la desaparición del picor y flujo molesto desde los primeros 3 a 5 días de aplicación constante. " +
+            "¿Estás lista para comenzar tu recuperación?"
+        )
+        return The_response, fase
+
+    # FASE 0: APERTURA (Empatía, dolor y PREGUNTA de enganche añadida)
     if fase == 0 or any(p in texto for p in ["hola", "info", "información", "precio", "programa", "cándida", "candida", "empezar"]):
         return (
             "Hola, soy Jeniffer 😊 Gracias por su confianza. " +
             "Mire, si usted ha probado óvulos y cremas por meses y el problema regresa, la entiendo perfectamente: " +
-            "yo pasé por ese mismo infierno y gasté una fortuna en farmacias sin ver resultados reales."
+            "yo pasé por ese mismo infierno y gasté una fortuna en farmacias sin ver resultados reales. " +
+            "Cuénteme, ¿cuánto tiempo lleva luchando contra esta infección?"
         ), 1
 
-    # FASE 1: VALIDACIÓN PROFUNDA (Autoridad y origen del protocolo)
+    # FASE 1: VALIDACIÓN PROFUNDA (Autoridad)
     elif fase == 1:
         return (
             "Es un desgaste físico y emocional horrible, uno hasta evita su intimidad por miedo. " +
             "Por eso diseñé este protocolo clínico: para erradicar la cándida de raíz y restaurar tu parte íntima para siempre. " +
-            "Cuénteme, ¿cuánto tiempo lleva atrapada en este ciclo de infecciones?"
+            "Cuénteme, ¿qué tratamientos ha probado hasta ahora que no le dieron resultado?"
         ), 2
 
-    # FASE 2: SOLUCIÓN CLÍNICA
+    # FASE 2: SOLUCIÓN CLÍNICA (Modificada según tu requerimiento exacto)
     elif fase == 2:
         return (
-            "7 meses (o el tiempo que lleve) es demasiado tiempo cargando con ese tormento. " +
-            "Los tratamientos comunes fallan porque solo tapan el síntoma. Nuestro sistema de ácido bórico de grado médico equilibra el pH y sella tu microbiota. " +
-            "¿Usted quiere recuperar su salud íntima y sentirse limpia y segura de una vez por todas?"
+            "Te entiendo, yo pasé por lo mismo y con este protocolo logré erradicar la cándida, " +
+            "ya que los tratamientos comunes fallan porque solo tapan el síntoma superficial sin limpiar el ecosistema vaginal. " +
+            "Nosotros aplicamos un protocolo clínico avanzado a base de ácido bórico y probióticos de grado médico que neutraliza el pH y erradica el hongo de raíz. " +
+            "¿Usted quiere recuperar su salud íntima y volver a sentirse limpia y segura de una vez por todas?"
         ), 3
 
-    # FASE 3: OFERTA IRRESISTIBLE (Equilibrada: ni muy larga ni muy corta, con explicaciones claras)
+    # FASE 3: OFERTA IRRESISTIBLE
     elif fase == 3:
-        # Si el usuario responde afirmativamente a la pregunta anterior, entregamos la oferta y avanzamos a fase 3.5
         return (
             "¡Esa es la decisión de una mujer valiente!\n\n" +
             "Normalmente este programa cuesta 25$, pero hoy para que comiences tu recuperación total te doy acceso al **PROGRAMA ZERO CANDI** por solo **7.99$ (Tasa BCV)**.\n\n" +
@@ -131,10 +147,10 @@ def motor_neuro_ventas(texto, fase):
             "🪪 25771166\n" +
             "📞 04121582154\n" +
             "Monto: 7.99$ (en bolívares tasa BCV).\n\n" +
-            "Apenas me envíe por aquí la foto del comprobante de pago, le activo su acceso de inmediato. ¿El pago lo hace Usted misma?"
+            "Apenas me envíe por härá la foto del comprobante de pago, le activo su acceso de inmediato. ¿El pago lo hace Usted misma?"
         ), 4
 
-    # FASE 4: ENTREGA DE LA APP (Al recibir la foto del comprobante o confirmación)
+    # FASE 4: ENTREGA DE LA APP
     elif fase == 4 or texto == "[imagen_enviada]" or any(p in texto for p in ["pago", "listo", "transferencia", "comprobante", "captura", "ya pagué"]):
         return (
             "¡Comprobante verificado con éxito! Felicidades por dar este gran paso hacia tu bienestar. 🚀\n\n" +
@@ -143,11 +159,11 @@ def motor_neuro_ventas(texto, fase):
             "📱 Abra el enlace desde su teléfono para ver su protocolo y recetario. ¿Me confirma por favor si logró ingresar sin problemas?"
         ), 4
 
-    # Comodín inteligente si se desvía en la fase de oferta
+    # Comodín inteligente si el texto no encaja en las fases anteriores
     else:
         return (
-            "¿Vio por qué los tratamientos tradicionales son solo un parche temporal y regular el pH vaginal de raíz es lo único que frena la infección para siempre? " +
-            "Dígame, ¿le queda alguna duda sobre el protocolo en casa para avanzar?"
+            "Le entiendo perfectamente. Lo más importante ahora es cortar el problema de raíz regulando su pH íntimo de forma clínica. " +
+            "Dígame, ¿le queda alguna duda sobre cómo adquirir su acceso hoy mismo?"
         ), fase
 
 def enviar_mensaje_whatsapp(destinatario, texto):
