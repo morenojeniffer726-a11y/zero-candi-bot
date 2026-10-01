@@ -76,16 +76,25 @@ def receive_message():
 
 def motor_neuro_ventas(texto, fase):
     """
-    Motor de neuro-ventas optimizado con manejo inteligente de preguntas y objeciones.
+    Motor de neuro-ventas blindado: sin bucles repetitivos y con respuestas dinámicas a cualquier input.
     """
+    # 0. Manejo de agradecimientos o confirmaciones de que abrió la app (Cierre de ciclo post-venta)
+    if any(p in texto for p in ["gracias", "excelente", "abrió", "abrio", "perfecto", "listo", "comprendido", "muy amable"]):
+        if fase >= 4:
+            return (
+                "¡Excelente! Me alegra muchísimo saber que ya estás dentro. " +
+                "Revisa con calma cada módulo del protocolo y el recetario. " +
+                "Cualquier duda que te surja en el proceso, me escribes por aquí. ¡Vamos a ganar tu salud total! 🚀"
+            ), fase
+
     # 1. Manejo global de objeción de dinero
-    if any(p in texto for p in ["dinero", "plata", "caro", "esperar", "quincena"]):
+    if any(p in texto for p in ["dinero", "plata", "caro", "esperar", "quincena", "no tengo"]):
         return (
             "Entiendo perfectamente, la situación está difícil. " +
-            "¿Te parece si te guardo la promoción y te contacto en la quincena para que no pierdas tu cupo clínico?"
+            "¿Te parece si te guardo la promoción de los 6.823 Bs y te contacto en unos días para que no pierdas tu cupo clínico?"
         ), fase
 
-    # 2. Manejo de preguntas generales en cualquier momento de la conversación (Faq inteligente)
+    # 2. FAQ Inteligente (Preguntas frecuentes en cualquier momento)
     if any(p in texto for p in ["cómo se usa", "como se usa", "aplicacion", "aplicación", "dónde se compra", "donde se compra", "ingredientes", "seguro"]):
         return (
             "Es un tratamiento 100% seguro y muy fácil de aplicar en la comodidad de tu hogar. " +
@@ -94,13 +103,12 @@ def motor_neuro_ventas(texto, fase):
         ), fase
 
     if any(p in texto for p in ["cuánto tiempo", "cuanto tiempo", "días", "dias", "funciona rápido", "resultados"]):
-        The_response = (
+        return (
             "La mayoría de nuestras pacientes sienten un alivio radical y la desaparición del picor y flujo molesto desde los primeros 3 a 5 días de aplicación constante. " +
             "¿Estás lista para comenzar tu recuperación?"
-        )
-        return The_response, fase
+        ), fase
 
-    # FASE 0: APERTURA (Empatía, dolor y PREGUNTA de enganche añadida)
+    # FASE 0: APERTURA (Empatía, dolor y PREGUNTA de enganche)
     if fase == 0 or any(p in texto for p in ["hola", "info", "información", "precio", "programa", "cándida", "candida", "empezar"]):
         return (
             "Hola, soy Jeniffer 😊 Gracias por su confianza. " +
@@ -117,7 +125,7 @@ def motor_neuro_ventas(texto, fase):
             "Cuénteme, ¿qué tratamientos ha probado hasta ahora que no le dieron resultado?"
         ), 2
 
-    # FASE 2: SOLUCIÓN CLÍNICA (Modificada según tu requerimiento exacto)
+    # FASE 2: SOLUCIÓN CLÍNICA
     elif fase == 2:
         return (
             "Te entiendo, yo pasé por lo mismo y con este protocolo logré erradicar la cándida, " +
@@ -126,11 +134,11 @@ def motor_neuro_ventas(texto, fase):
             "¿Usted quiere recuperar su salud íntima y volver a sentirse limpia y segura de una vez por todas?"
         ), 3
 
-    # FASE 3: OFERTA IRRESISTIBLE
+    # FASE 3: OFERTA IRRESISTIBLE (Precio fijo en bolívares)
     elif fase == 3:
         return (
             "¡Esa es la decisión de una mujer valiente!\n\n" +
-            "Normalmente este programa cuesta 25$, pero hoy para que comiences tu recuperación total te doy acceso al **PROGRAMA ZERO CANDI** por solo **7.99$ (Tasa BCV)**.\n\n" +
+            "Normalmente este programa cuesta 25$, pero hoy para que comiences tu recuperación total te doy acceso al **PROGRAMA ZERO CANDI** por solo **6.823 Bs**.\n\n" +
             "🧬 **Lo que incluye tu acceso inmediato:**\n\n" +
             "✅ **Protocolo exacto de Ácido Bórico:** Te enseñamos qué comprar y cómo usarlo de forma segura para limpiar y restaurar tu zona íntima.\n" +
             "🥗 **Recetario Anti-Cándida (15 opciones):** Comidas deliciosas sin azúcares ni harinas para cortar el alimento del hongo desde la cocina.\n" +
@@ -146,12 +154,12 @@ def motor_neuro_ventas(texto, fase):
             "🏦 *Datos para Pago Móvil (Mercantil)*\n" +
             "🪪 25771166\n" +
             "📞 04121582154\n" +
-            "Monto: 7.99$ (en bolívares tasa BCV).\n\n" +
-            "Apenas me envíe por härá la foto del comprobante de pago, le activo su acceso de inmediato. ¿El pago lo hace Usted misma?"
+            "Monto exacto: **6.823 Bs**\n\n" +
+            "Apenas me envíe por aquí la foto del comprobante de pago, le activo su acceso de inmediato. ¿El pago lo hace Usted misma?"
         ), 4
 
     # FASE 4: ENTREGA DE LA APP
-    elif fase == 4 or texto == "[imagen_enviada]" or any(p in texto for p in ["pago", "listo", "transferencia", "comprobante", "captura", "ya pagué"]):
+    elif fase == 4 or texto == "[imagen_enviada]" or any(p in texto for p in ["pago", "listo", "transferencia", "comprobante", "captura", "ya pagué", "ya pague"]):
         return (
             "¡Comprobante verificado con éxito! Felicidades por dar este gran paso hacia tu bienestar. 🚀\n\n" +
             "Su usuario ya está activo en nuestra app:\n" +
@@ -159,11 +167,11 @@ def motor_neuro_ventas(texto, fase):
             "📱 Abra el enlace desde su teléfono para ver su protocolo y recetario. ¿Me confirma por favor si logró ingresar sin problemas?"
         ), 4
 
-    # Comodín inteligente si el texto no encaja en las fases anteriores
+    # COMODÍN INTELIGENTE ANTIBUCLES (Para cualquier texto fuera de guion)
     else:
         return (
-            "Le entiendo perfectamente. Lo más importante ahora es cortar el problema de raíz regulando su pH íntimo de forma clínica. " +
-            "Dígame, ¿le queda alguna duda sobre cómo adquirir su acceso hoy mismo?"
+            "Le entiendo perfectamente. Lo más importante ahora es cortar el problema de raíz regulando su pH íntimo de forma clínica con nuestro programa de 6.823 Bs. " +
+            "Dígame, ¿le queda alguna duda sobre los beneficios o prefiere que le pase los datos del pago móvil para asegurar su acceso hoy mismo?"
         ), fase
 
 def enviar_mensaje_whatsapp(destinatario, texto):
