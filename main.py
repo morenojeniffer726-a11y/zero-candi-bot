@@ -12,12 +12,12 @@ VERIFY_TOKEN = "zero_candi_secure_token_2026"
 WHATSAPP_TOKEN = "EAAUV6d9auksBSrAT7SksGzBG8sa6EvodZC4oPePCK8DCKszquGSeNuKEZBrCSqZCWYRe2OQ7L93DxUfMUtiDQt21cUZA3pJQwtO1T6QTHvItO0pTLDMsyjfdwKFUaDwOdx8QVyNhQc92ZCyZCbcpWUOiZBgmVyD7BY2pU0UbMpf1qxTzmO4LcdrPhJd6VdO6JD8HAZDZD"
 PHONE_NUMBER_ID = "1316482411550878"
 
-# Memoria de estado comercial y datos del cliente por número de teléfono
+# Memoria de estado comercial por número de teléfono
 USUARIOS_ESTADO = {}
 
 @app.route('/', methods=['GET'])
 def home():
-    return "¡Jeniffer - Cándida Zero Bot Comercial Optimizado Activo 24/7!", 200
+    return "¡Jeniffer - Cándida Zero Bot Activo y Blindado 24/7!", 200
 
 @app.route('/webhook', methods=['GET'])
 def verify_webhook():
@@ -31,55 +31,57 @@ def verify_webhook():
 @app.route('/webhook', methods=['POST'])
 def receive_message():
     data = request.get_json()
+    print(f"📥 WEBHOOK RECIBIDO: {data}")
     
     try:
-        changes = data['entry'][0]['changes'][0]['value']
-        if 'messages' in changes:
-            mensaje_entrada = changes['messages'][0]
-            numero_remitente = mensaje_entrada['from']
+        # Validar estructura estándar de WhatsApp Cloud API
+        if 'entry' in data and data['entry'][0].get('changes'):
+            changes = data['entry'][0]['changes'][0]['value']
             
-            tipo_mensaje = mensaje_entrada.get('type')
-            texto_usuario = ""
-            
-            if tipo_mensaje == 'text':
-                texto_usuario = mensaje_entrada['text']['body'].strip()
-            elif tipo_mensaje == 'image':
-                texto_usuario = "[COMPROBANTE_ENVIADO]"
-            
-            print(f"[{tipo_mensaje.upper()}] Recibido de {numero_remitented}: {texto_usuario}")
-            
-            # Inicializar estado si no existe
-            if numero_remitente not in USUARIOS_ESTADO:
-                USUARIOS_ESTADO[numero_remitente] = {
-                    "paso": "inicio",
-                    "tiempo": "",
-                    "sintoma": ""
-                }
-            
-            # Procesar el motor de ventas optimizado
-            respuesta_texto = motor_neuro_ventas(numero_remitente, texto_usuario)
-            
-            # Pausa humana de 10 segundos para máxima naturalidad
-            print("Aplicando pausa humana de 10 segundos...")
-            time.sleep(10)
-            
-            # Enviar mensaje a WhatsApp
-            enviar_mensaje_whatsapp(numero_remitente, respuesta_texto)
-            
-    except (KeyError, IndexError) as e:
-        print(f"Error procesando webhook: {str(e)}")
-        pass
+            if 'messages' in changes:
+                mensaje_entrada = changes['messages'][0]
+                numero_remitente = mensaje_entrada['from']
+                
+                tipo_mensaje = mensaje_entrada.get('type')
+                texto_usuario = ""
+                
+                if tipo_mensaje == 'text':
+                    texto_usuario = mensaje_entrada['text']['body'].strip()
+                elif tipo_mensaje == 'image':
+                    texto_usuario = "[COMPROBANTE_ENVIADO]"
+                else:
+                    texto_usuario = "[OTRO_TIPO_MENSAJE]"
+                
+                print(f"💬 Mensaje extraído de {numero_remitente}: {texto_usuario}")
+                
+                # Inicializar estado si es un usuario nuevo
+                if numero_remitente not in USUARIOS_ESTADO:
+                    USUARIOS_ESTADO[numero_remitente] = {
+                        "paso": "inicio",
+                        "tiempo": "",
+                        "sintoma": ""
+                    }
+                
+                # Procesar respuesta comercial
+                respuesta_texto = motor_neuro_ventas(numero_remitente, texto_usuario)
+                
+                # Pausa humana táctica de 3 segundos para evitar bloqueos por velocidad
+                time.sleep(3)
+                
+                # Enviar respuesta a WhatsApp
+                enviar_mensaje_whatsapp(numero_remitente, respuesta_texto)
+                
+    except Exception as e:
+        print(f"❌ Error crítico procesando webhook: {str(e)}")
         
     return jsonify({"status": "received"}), 200
 
 def motor_neuro_ventas(numero, texto):
-    """
-    Máquina de ventas optimizada. Mantiene tu flujo original intacto y 
-    añade capacidad de respuesta experta ante dudas u objeciones sobre el producto.
-    """
     texto_lower = texto.lower()
     estado_actual = USUARIOS_ESTADO[numero]["paso"]
     
+    print(f"🔄 Estado actual de {numero}: {estado_actual} | Mensaje: {texto}")
+
     # 1. SI ENVÍA UN COMPROBANTE DE PAGO
     if "[comprobante_enviado]" in texto or "banco" in texto_lower or "transferencia" in texto_lower or "pago móvil" in texto_lower or "listo el pago" in texto_lower or "pagado" in texto_lower:
         USUARIOS_ESTADO[numero]["paso"] = "completado"
@@ -94,12 +96,11 @@ def motor_neuro_ventas(numero, texto):
     if estado_actual == "completado" or "gracias" in texto_lower or "muchas gracias" in texto_lower:
         return (
             "¡De nada con todo el corazón! Recuerde que no está sola en este proceso. "
-            "Dime, ¿pudiste ingresar a la app sin inconvenientes o tienes alguna duda sobre cómo aplicarte los óvulos?"
+            "¿Pudiste ingresar a la app sin inconvenientes o tienes alguna duda sobre cómo aplicarte los óvulos?"
         )
 
-    # 3. FLUJO COMERCIAL ORIGINAL MEJORADO
+    # 3. FLUJO COMERCIAL PASO A PASO
     if estado_actual == "inicio":
-        # Guardamos el tiempo que indicó la usuaria
         USUARIOS_ESTADO[numero]["tiempo"] = texto
         USUARIOS_ESTADO[numero]["paso"] = "esperando_sintoma"
         
@@ -131,22 +132,21 @@ def motor_neuro_ventas(numero, texto):
         )
 
     else:
-        # 4. MANEJO INTELIGENTE DE OBJECIONES Y DUDAS ("qué me estás vendiendo", etc.)
-        if "que es" in texto_lower or "vending" in texto_lower or "vendes" in texto_lower or "programa" in texto_lower or "consiste" in texto_lower:
+        # Manejo de objeciones / Dudas sobre el producto
+        if "que es" in texto_lower or "vending" in texto_lower or "vendes" in texto_lower or "programa" in texto_lower or "consiste" in texto_lower or "entiendo" in texto_lower:
             return (
                 "Te explico con todo detalle: el *PROGRAMA ZERO CANDI* es un protocolo clínico digital diseñado para erradicar la cándida de raíz.\n\n"
                 "Incluye:\n"
-                "1️⃣ El protocolo exacto de uso de óvulos de ácido bórico de grado médico para sellar tu microbiota.\n"
-                "2️⃣ El recetario anti-cándida exclusivo para cortar el alimento del hongo desde la alimentación.\n"
-                "3️⃣ Acceso privado a nuestra plataforma web 24/7.\n\n"
-                "Todo esto por solo 7.99$. ¿Estás lista para hacer tu pago móvil y comenzar tu sanación hoy?"
+                "1️⃣ Protocolo exacto de óvulos de ácido bórico.\n"
+                "2️⃣ Recetario anti-cándida para cortar el alimento del hongo.\n"
+                "3️⃣ Acceso privado a la app 24/7.\n\n"
+                "Todo por solo 7.99$. ¿Deseas los datos de pago móvil para comenzar hoy?"
             )
         
-        # Si hace cualquier otra pregunta, mantenemos la oferta activa y guiamos al pago
         return (
             "Te entiendo perfectamente. Yo pasé por ese mismo infierno y sé lo importante que es sanar de raíz.\n\n"
             "El *Programa Zero Candi* te entrega el paso a paso exacto en nuestra app por solo 7.99$. "
-            "¿Deseas que te comparta los datos de pago móvil para activar tu acceso de inmediato?"
+            "¿Deseas que te comparta los datos de pago móvil para activar tu acceso?"
         )
 
 def enviar_mensaje_whatsapp(destinatario, texto):
@@ -165,9 +165,9 @@ def enviar_mensaje_whatsapp(destinatario, texto):
     }
     try:
         response = requests.post(url, json=payload, headers=headers)
-        print(f"Respuesta enviada a Meta: {response.status_code} - {response.text}")
+        print(f"📤 Resultado envío Meta: {response.status_code} - {response.text}")
     except Exception as e:
-        print(f"Error al enviar mensaje a WhatsApp: {str(e)}")
+        print(f"❌ Error al enviar mensaje a WhatsApp: {str(e)}")
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
