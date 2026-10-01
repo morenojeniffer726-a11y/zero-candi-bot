@@ -1,170 +1,181 @@
-<!DOCTYPE html>
-<html lang="es" class="scroll-smooth">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transforma tu Realidad | El Método Definitivo</title>
-    <!-- Tailwind CSS CDN para rendimiento extremo y carga instantánea -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#fdf4f2',
-                            500: '#e11d48', // Rojo acción de alto impacto
-                            600: '#be123c',
-                            900: '#881337',
-                        }
-                    }
-                }
+from flask import Flask, request, jsonify
+import os
+import requests
+import time
+
+app = Flask(__name__)
+
+# ====================================================================
+# CONFIGURACIÓN MAESTRA - WHATSAPP CLOUD API (CÁNDIDA ZERO)
+# ====================================================================
+VERIFY_TOKEN = "zero_candi_secure_token_2026"
+WHATSAPP_TOKEN = "EAAUV6d9auksBSrAT7SksGzBG8sa6EvodZC4oPePCK8DCKszquGSeNuKEZBrCSqZCWYRe2OQ7L93DxUfMUtiDQt21cUZA3pJQwtO1T6QTHvItO0pTLDMsyjfdwKFUaDwOdx8QVyNhQc92ZCyZCbcpWUOiZBgmVyD7BY2pU0UbMpf1qxTzmO4LcdrPhJd6VdO6JD8HAZDZD"
+PHONE_NUMBER_ID = "1316482411550878"
+
+# Historial de chat por número de teléfono para memoria fluida y continua
+# Estructura: { "numero": [ {"role": "user"/"assistant", "content": "mensaje"}, ... ] }
+HISTORIAL_CONVERSACIONES = {}
+
+@app.route('/', methods=['GET'])
+def home():
+    return "¡Jeniffer - Cándida Zero Bot Inteligente Activo 24/7!", 200
+
+@app.route('/webhook', methods=['GET'])
+def verify_webhook():
+    token = request.args.get('hub.verify_token')
+    challenge = request.args.get('hub.challenge')
+    
+    if token == VERIFY_TOKEN and challenge:
+        return challenge, 200
+    return 'Error de verificación de token', 403
+
+@app.route('/webhook', methods=['POST'])
+def receive_message():
+    data = request.get_json()
+    
+    try:
+        changes = data['entry'][0]['changes'][0]['value']
+        if 'messages' in changes:
+            mensaje_entrada = changes['messages'][0]
+            numero_remitente = mensaje_entrada['from']
+            
+            tipo_mensaje = mensaje_entrada.get('type')
+            texto_usuario = ""
+            
+            if tipo_mensaje == 'text':
+                texto_usuario = mensaje_entrada['text']['body'].strip()
+            elif tipo_mensaje == 'image':
+                texto_usuario = "[El cliente ha enviado una imagen o comprobante de pago]"
+            
+            print(f"[{tipo_mensaje.upper()}] Recibido de {numero_remitente}: {texto_usuario}")
+            
+            # Inicializar historial si no existe
+            if numero_remitente not in HISTORIAL_CONVERSACIONES:
+                HISTORIAL_CONVERSACIONES[numero_remitente] = []
+            
+            # Agregar mensaje del usuario al historial
+            HISTORIAL_CONVERSACIONES[numero_remitente].append({"role": "user", "content": texto_usuario})
+            
+            # Mantener solo los últimos 15 intercambios para rendimiento extremo
+            if len(HISTORIAL_CONVERSACIONES[numero_remitente]) > 30:
+                HISTORIAL_CONVERSACIONES[numero_remitente] = HISTORIAL_CONVERSACIONES[numero_remitente][-30:]
+            
+            # Procesar cerebro comercial con inteligencia artificial y contexto
+            respuesta_texto = motor_neuro_ventas_ia(HISTORIAL_CONVERSACIONES[numero_remitente])
+            
+            # Agregar respuesta al historial
+            HISTORIAL_CONVERSACIONES[numero_remitente].append({"role": "assistant", "content": respuesta_texto})
+            
+            # Pausa humana de 12 segundos para máxima naturalidad
+            print("Aplicando pausa humana de 12 segundos...")
+            time.sleep(12)
+            
+            # Enviar mensaje a WhatsApp
+            enviar_mensaje_whatsapp(numero_remitente, respuesta_texto)
+            
+    except (KeyError, IndexError) as e:
+        print(f"Error procesando webhook: {str(e)}")
+        pass
+        
+    return jsonify({"status": "received"}), 200
+
+def motor_neuro_ventas_ia(historial):
+    """
+    Cerebro comercial avanzado inspirado en Margarita Pasos y la experiencia personal de Jeniffer.
+    Utiliza el historial completo para mantener contexto continuo y responder con empatía y precisión.
+    """
+    
+    # Prompt del Sistema (Directrices Maestras para el Bot)
+    system_prompt = """
+    Eres Jeniffer, creadora del programa 'Cándida Zero' y experta en salud íntima femenina y neuro-ventas.
+    Te comunicas por WhatsApp con mujeres de Venezuela que sufren de infecciones vaginales recurrentes (cándida, flujo blanco, picazón, etc.).
+    
+    TUS DIRECTRICES DE ORO:
+    1. HISTORIA DE AUTORIDAD Y EMPATÍA: Habla desde la experiencia real. Di siempre que tú pasaste por ese mismo infierno, gastaste dinero en farmacias y cremas sin ver resultados, hasta que creaste este protocolo. Valida exactamente lo que la clienta te diga (si dice 6 meses, menciona sus 6 meses con empatía).
+    2. TONO: Cercano, cálido, firme, empoderador y de absoluta confianza (como una hermana mayor o una mentora que ya venció el problema).
+    3. MANEJO DE DUDAS Y SOPORTE TOTAL: Puedes responder cualquier duda técnica o clínica que tenga la clienta (cómo usar los óvulos de ácido bórico, el recetario anti-cándida, la alimentación, etc.) con base en medicina natural y bienestar.
+    4. FLUJO COMERCIAL Y CIERRE:
+       - Si muestra interés o dolor, profundiza en la solución.
+       - Si pregunta el precio o muestra disposición, presenta la oferta irresistible: El PROGRAMA ZERO CANDI completo (Protocolo exacto de Ácido Bórico + Recetario Anti-Cándida de 15 opciones + Checklist diario + Garantía blindada de 20 días) por solo 7.99$ (Tasa BCV) (Precio regular 25$).
+       - Cuando acepten comprar (con un "sí", "estoy lista", etc.), dales de inmediato los datos de pago móvil:
+         Banco: Mercantil
+         Cédula: 25771166
+         Teléfono: 04121582154
+         Monto: 7.99$
+         Y pídeles el comprobante.
+       - Si envían un comprobante o foto, felicítalas y entrégales el enlace de acceso a la app: https://candida-zero.vercel.app/
+    5. GESTIÓN DE POST-VENTA Y AGRADECIMIENTOS: Si la clienta dice "gracias", responde con calidez, recuérdale que estás para apoyarla en su sanación y pregúntale si pudo ingresar a la app o si tiene alguna duda sobre cómo aplicarse los óvulos. Nunca repitas un mensaje automatizado de forma robótica si ya pagó; lee el contexto y responde de forma natural.
+    6. OBJECIONES DE DINERO: Si dicen que no tienen dinero o deben esperar quincena, muéstrate comprensiva y ofréceles apartarles el cupo promocional para esa fecha.
+    7. BREVEDAD PARA WHATSAPP: Usa párrafos cortos, viñetas limpias y emojis moderados para una lectura rápida en el móvil.
+    """
+
+    # Construir payload para la API de IA (puedes conectar OpenAI o Google AI Studio aquí)
+    # Por seguridad y estabilidad, simularemos la llamada estructurada con el contexto integrado o endpoint LLM.
+    # Nota: Si usas OpenAI o Google Gemini API en tu servidor, insertas tu cliente aquí.
+    # Ejemplo de estructura de mensajes para enviar al modelo:
+    
+    mensajes_completos = [{"role": "system", "content": system_prompt}] + historial
+    
+    # Si tienes configurada tu API Key de OpenAI o Gemini, puedes hacer la petición real. 
+    # Para asegurar que tu bot funcione de inmediato con la lógica exacta, aquí tienes el conector robusto o puedes usar la API de OpenAI/Gemini:
+    
+    try:
+        # Ejemplo usando OpenAI (puedes cambiar la URL o SDK según prefieras)
+        openai_api_key = os.environ.get("OPENAI_API_KEY", "")
+        if openai_api_key:
+            headers = {
+                "Authorization": f"Bearer {openai_api_key}",
+                "Content-Type": "application/json"
             }
+            payload = {
+                "model": "gpt-4o-mini",
+                "messages": mensajes_completos,
+                "temperature": 0.7,
+                "max_tokens": 500
+            }
+            response = requests.post("https://api.openai.com/v1/chat/completions", json=payload, headers=headers, timeout=20)
+            if response.status_code == 200:
+                return response.json()['choices'][0]['message']['content'].strip()
+        
+        # Fallback inteligente con heurística de contexto si no está activa la API key de LLM en este segundo:
+        ultimo_mensaje = historial[-1]["content"].lower()
+        
+        if "gracias" in ultimo_mensaje or "gracia" in ultimo_mensaje:
+            return "¡De nada con todo el corazón! Recuerda que no estás sola en esto. Dime, ¿pudiste abrir el enlace de la app o tienes alguna duda con la aplicación de los óvulos?"
+        
+        if "óvulo" in ultimo_mensaje or "ovulo" in ultimo_mensaje or "aplicar" in ultimo_mensaje:
+            return "Los óvulos de ácido bórico de grado médico se colocan preferiblemente en la noche antes de dormir, bien arriba en la vagina. Te ayudan a equilibrar el pH de forma inmediata y eliminar el hongo. ¿Tienes alguna duda sobre cómo prepararlos o conseguirlos?"
+            
+        return (
+            "Te entiendo perfectamente, yo pasé por ese mismo infierno de infecciones recurrentes y sé lo agotador que es. " +
+            "Por eso diseñé Cándida Zero: para ir a la raíz del problema y devolverte tu tranquilidad íntima. " +
+            "Cuéntame, ¿qué síntoma es el que más te incomoda en este momento para darte la solución exacta?"
+        )
+
+    except Exception as e:
+        print(f"Error en motor IA: {str(e)}")
+        return "¡Hola! Estoy aquí para ayudarte a recuperar tu salud íntima de raíz. Cuéntame, ¿cuánto tiempo llevas lidiando con esta infección?"
+
+def enviar_mensaje_whatsapp(destinatario, texto):
+    url = f"https://graph.facebook.com/v26.0/{PHONE_NUMBER_ID}/messages"
+    headers = {
+        "Authorization": f"Bearer {WHATSAPP_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": destinatario,
+        "type": "text",
+        "text": {
+            "body": texto
         }
-    </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-    </style>
-</head>
-<body class="bg-slate-950 text-slate-100 antialiased selection:bg-brand-500 selection:text-white">
+    }
+    try:
+        response = requests.post(url, json=payload, headers=headers)
+        print(f"Respuesta enviada a Meta: {response.status_code} - {response.text}")
+    except Exception as e:
+        print(f"Error al enviar mensaje a WhatsApp: {str(e)}")
 
-    <!-- BARRA DE URGENCIA / ESCASEZ (Gatillo Mental) -->
-    <div class="bg-gradient-to-r from-brand-600 to-brand-500 text-white text-xs sm:text-sm font-bold py-2 px-4 text-center sticky top-0 z-50 shadow-md">
-        ⚡ INSCRIPCIONES ABIERTAS: Quedan <span id="contador-cupos" class="underline uppercase">3 cupos</span> disponibles con tarifa preferencial.
-    </div>
-
-    <!-- HERO SECTION: Promesa de Valor Clara + Fricción Cero -->
-    <header class="relative overflow-hidden pt-12 pb-20 lg:pt-20 lg:pb-32 border-b border-slate-800">
-        <div class="max-w-5xl mx-auto px-4 sm:px-6 relative z-10 text-center">
-            
-            <!-- Autoridad / Microcopy -->
-            <div class="inline-flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-full px-4 py-1.5 mb-6 text-xs sm:text-sm text-slate-300">
-                <span class="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Metodología Comprobada de Alto Rendimiento
-            </div>
-
-            <!-- Titular de Transformación (Neuro-ventas: Ataca el dolor y da la solución) -->
-            <h1 class="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white mb-6 leading-tight">
-                Deja de sobrevivir. <br class="hidden sm:inline">
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-500 to-rose-400">
-                    Es hora de dominar tu éxito.
-                </span>
-            </h1>
-
-            <p class="text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-                Desbloquea el sistema definitivo para escalar tus resultados personales y profesionales. Sin excusas, sin rodeos, directo a la cima.
-            </p>
-
-            <!-- CTA Principal optimizado para el pulgar (Mobile First) -->
-            <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
-                <a href="#oferta" class="w-full sm:w-auto bg-brand-500 hover:bg-brand-600 text-white text-lg font-bold px-8 py-4 rounded-xl shadow-lg shadow-brand-500/25 transition-all transform hover:-translate-y-0.5 text-center">
-                    QUIERO ASEGURAR MI CUPO AHORA 🚀
-                </a>
-            </div>
-            
-            <p class="text-xs text-slate-500 mt-3">🔒 Pago 100% seguro y garantizado. Acceso inmediato.</p>
-        </div>
-    </header>
-
-    <!-- PRUEBA SOCIAL / AUTORIDAD -->
-    <section class="py-12 bg-slate-900/50 border-b border-slate-800">
-        <div class="max-w-5xl mx-auto px-4 text-center">
-            <p class="text-xs uppercase tracking-widest text-slate-500 font-bold mb-6">Respaldado por líderes y emprendedores de alto nivel</p>
-            <div class="flex flex-wrap justify-center items-center gap-8 sm:gap-16 opacity-70 grayscale hover:grayscale-0 transition-all">
-                <span class="text-xl font-extrabold tracking-tighter text-slate-400">MOMENTUM.</span>
-                <span class="text-xl font-extrabold tracking-tighter text-slate-400">GIGANTE GROUP</span>
-                <span class="text-xl font-extrabold tracking-tighter text-slate-400">ELITE ACADEMY</span>
-            </div>
-        </div>
-    </section>
-
-    <!-- SECCIÓN DE DOLOR Y TRANSFORMACIÓN -->
-    <section class="py-20 px-4 sm:px-6 max-w-5xl mx-auto">
-        <div class="text-center mb-16">
-            <h2 class="text-3xl sm:text-4xl font-bold text-white mb-4">¿Te sientes estancado a pesar de esforzarte todos los días?</h2>
-            <p class="text-slate-400 max-w-xl mx-auto">El problema no es tu capacidad, es la falta de un sistema de ejecución probado.</p>
-        </div>
-
-        <div class="grid md:grid-cols-2 gap-8">
-            <!-- Dolor -->
-            <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl relative">
-                <div class="absolute -top-3 left-6 bg-rose-500/10 text-rose-400 text-xs font-bold px-3 py-1 rounded-full border border-rose-500/20">EL CAMINO TRADICIONAL</div>
-                <h3 class="text-xl font-bold text-slate-200 mt-2 mb-4">Trabajar duro sin dirección</h3>
-                <ul class="space-y-3 text-slate-400 text-sm">
-                    <li class="flex items-center gap-2">❌ Frustración diaria y burnout constante.</li>
-                    <li class="flex items-center gap-2">❌ Resultados económicos inconsistentes.</li>
-                    <li class="flex items-center gap-2">❌ Falta de claridad en el siguiente paso.</li>
-                </ul>
-            </div>
-            <!-- Solución -->
-            <div class="bg-gradient-to-b from-slate-900 to-slate-900/80 border border-brand-500/30 p-8 rounded-2xl relative shadow-xl shadow-brand-500/5">
-                <div class="absolute -top-3 left-6 bg-brand-500 text-white text-xs font-bold px-3 py-1 rounded-full">EL MÉTODO CORRECTO</div>
-                <h3 class="text-xl font-bold text-white mt-2 mb-4">Sistema de Alto Impacto</h3>
-                <ul class="space-y-3 text-slate-300 text-sm">
-                    <li class="flex items-center gap-2">✅ Enfoque láser en generación de valor.</li>
-                    <li class="flex items-center gap-2">✅ Crecimiento exponencial predecible.</li>
-                    <li class="flex items-center gap-2">✅ Mentalidad de ganador blindada contra excusas.</li>
-                </ul>
-            </div>
-        </div>
-    </section>
-
-    <!-- OFERTA IRRESISTIBLE (Precios y Paquetes) -->
-    <section id="oferta" class="py-20 bg-slate-900/30 border-t border-slate-800">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6">
-            <div class="text-center mb-16">
-                <span class="text-brand-500 font-bold uppercase text-xs tracking-widest">Inversión Inteligente</span>
-                <h2 class="text-3xl sm:text-5xl font-extrabold text-white mt-2 mb-4">Elige tu pase al siguiente nivel</h2>
-                <p class="text-slate-400">Acceso inmediato con precio preferencial por tiempo limitado.</p>
-            </div>
-
-            <div class="bg-slate-900 border-2 border-brand-500 rounded-3xl p-8 sm:p-12 relative shadow-2xl">
-                <div class="absolute -top-4 right-8 bg-brand-500 text-white text-xs font-extrabold px-4 py-1.5 rounded-full uppercase tracking-wider">
-                    Más Popular
-                </div>
-
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-8 mb-8 gap-4">
-                    <div>
-                        <h3 class="text-2xl font-bold text-white">Programa Intensivo VIP</h3>
-                        <p class="text-slate-400 text-sm mt-1">Transformación total garantizada de la mano de expertos.</p>
-                    </div>
-                    <div class="text-left md:text-right">
-                        <span class="text-slate-500 line-through text-lg">$497 USD</span>
-                        <div class="text-4xl sm:text-5xl font-extrabold text-white">$97 <span class="text-sm font-normal text-slate-400">USD único pago</span></div>
-                    </div>
-                </div>
-
-                <ul class="space-y-4 mb-10 text-slate-300">
-                    <li class="flex items-center gap-3">
-                        <svg class="w-5 h-5 text-brand-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                        Acceso de por vida a la plataforma de entrenamiento.
-                    </li>
-                    <li class="flex items-center gap-3">
-                        <svg class="w-5 h-5 text-brand-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                        Plantillas de ventas y frameworks listos para copiar y pegar.
-                    </li>
-                    <li class="flex items-center gap-3">
-                        <svg class="w-5 h-5 text-brand-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                        Sesiones de mentoría en vivo semanales.
-                    </li>
-                </ul>
-
-                <!-- CTA con enlace dinámico simulado a pasarela o WhatsApp -->
-                <a href="https://wa.me/?text=Hola,%20quiero%20aprovechar%20el%20precio%20especial%20del%20Programa%20VIP." target="_blank" class="block w-full bg-brand-500 hover:bg-brand-600 text-white text-center font-extrabold py-4 rounded-xl text-lg shadow-lg shadow-brand-500/30 transition-all">
-                    ACCEDER AL PROGRAMA AHORA 🚀
-                </a>
-            </div>
-        </div>
-    </section>
-
-    <!-- FOOTER CONFIANZA -->
-    <footer class="py-8 text-center text-xs text-slate-600 border-t border-slate-900">
-        <p>© 2026 Máquina de Ventas Digital. Todos los derechos reservados.</p>
-        <p class="mt-1">El éxito no es un accidente, es el resultado de decisiones estratégicas.</p>
-    </footer>
-
-</body>
-</html>
+if __name__ == '__main__':
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
