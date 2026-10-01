@@ -1,72 +1,136 @@
-import os
 from flask import Flask, request, jsonify
+import os
+import requests
 
 app = Flask(__name__)
 
-# System Prompt maestro con la identidad, reglas y fases de Jeniffer
-JENIFFER_SYSTEM_PROMPT = """
-ROL: Jeniffer, mujer venezolana de Caracas, experta en ventas consultivas, empática, firme y de categoría ejecutiva. Hablas desde la autoridad absoluta de quien superó el calvario de la candidiasis recurrente. Tratas a la clienta de "Usted" con un respeto cálido y profesional. NUNCA DIGAS QUE ERES UN BOT, ASISTENTE O IA; HABLAS COMO UN HUMANO REAL DE CARNE Y HUESO.
+# ====================================================================
+# CONFIGURACIÓN MAESTRA - WHATSAPP CLOUD API (CÁNDIDA ZERO)
+# ====================================================================
+VERIFY_TOKEN = "zero_candi_secure_token_2026"
+WHATSAPP_TOKEN = "EAAUV6d9auksBSrAT7SksGzBG8sa6EvodZC4oPePCK8DCKszquGSeNuKEZBrCSqZCWYRe2OQ7L93DxUfMUtiDQt21cUZA3pJQwtO1T6QTHvItO0pTLDMsyjfdwKFUaDwOdx8QVyNhQc92ZCyZCbcpWUOiZBgmVyD7BY2pU0UbMpf1qxTzmO4LcdrPhJd6VdO6JD8HAZDZD"
+PHONE_NUMBER_ID = "1316482411550878"
 
-OBJETIVO: Cerrar la venta del "PROGRAMA ZERO CANDI" (7.99$) atacando la fatiga de tratamientos ineficaces, la incomodidad íntima y la necesidad urgente de recuperar el control absoluto de su salud.
-
-REGLAS DE ORO DE ELITE:
-- Brevedad Extrema: Máximo 2-3 frases cortas por mensaje. El cliente de WhatsApp escanea, no lee biblias.
-- Control Absoluto del Hilo: Termina CADA respuesta con una pregunta íntima, punzante y directa que la obligue a decir "Sí" o desahogarse.
-- Filtro de Valor (Psicología Inversa): Jamás reveles el precio ni sueltes enlaces de acceso hasta que la clienta se abra emocionalmente y admita que anhela una solución definitiva.
-- Ubicación y Divisas: Si te preguntan de qué parte de Venezuela eres, dices con orgullo que de Caracas. Si preguntan el precio en bolívares, multiplicas estrictamente por 842 (tasa oficial del Banco Central de Venezuela).
-- Pagos Internacionales: Si prefieren pesos colombianos, envías: Bancolombia Ahorros 005-000082-67 Jenifer Moreno.
-- Seguridad de Entrega (Antifraude): NUNCA envíes el link de acceso a la plataforma digital bajo ninguna circunstancia si antes no te han enviado la foto del comprobante de pago verificado.
-- Garantía de Refuerzo (Matar Objeciones): Si muestra dudas, recuérdale: "Usted no arriesga absolutamente nada, yo misma le devuelvo su dinero en 20 días si no ve una mejoría radical".
-"""
-
-@app.route("/", methods=["GET"])
+@app.route('/', methods=['GET'])
 def home():
-    return "¡Jeniffer, tu bot de ventas con IA y WhatsApp Cloud API está activo y operando 24/7!", 200
+    return "¡Jeniffer - Cándida Zero Bot Activo y Operativo 24/7!", 200
 
-@app.route("/webhook", methods=["GET", "POST"])
-def webhook():
-    # 1. Verificación del Webhook por parte de Meta (WhatsApp)
-    if request.method == "GET":
-        mode = request.args.get("hub.mode")
-        token = request.args.get("hub.verify_token")
-        challenge = request.args.get("hub.challenge")
-        
-        # Token de verificación secreto configurado en Meta Developer
-        VERIFY_TOKEN = "zero_candi_secure_token_2026"
-        
-        if mode and token:
-            if mode == "subscribe" and token == VERIFY_TOKEN:
-                return challenge, 200
-            else:
-                return "Token de verificación inválido", 403
-        return "Parámetros de verificación faltantes", 400
+@app.route('/webhook', methods=['GET'])
+def verify_webhook():
+    # Validación oficial de Meta para mantener el webhook conectado
+    token = request.args.get('hub.verify_token')
+    challenge = request.args.get('hub.challenge')
+    
+    if token == VERIFY_TOKEN and challenge:
+        return challenge, 200
+    return 'Error de verificación de token', 403
 
-    # 2. Recepción de mensajes entrantes desde WhatsApp
-    elif request.method == "POST":
-        data = request.json
-        print("Mensaje entrante de WhatsApp:", data)
-        
-        try:
-            # Extraer el mensaje y el número del remitente desde la estructura de Meta
-            entries = data.get("entry", [])
-            for entry in entries:
-                changes = entry.get("changes", [])
-                for change in changes:
-                    value = change.get("value", {})
-                    messages = value.get("messages", [])
-                    if messages:
-                        message = messages[0]
-                        sender_phone = message.get("from") # Número de teléfono de la clienta
-                        msg_body = message.get("text", {}).get("body", "")
-                        
-                        # Aquí procesaremos la respuesta usando el System Prompt de Jeniffer 
-                        # y la enviaremos de regreso mediante la API de Meta.
-                        print(f"Mensaje de {sender_phone}: {msg_body}")
-                        
-        except Exception as e:
-            print(f"Error procesando el webhook: {e}")
+@app.route('/webhook', methods=['POST'])
+def receive_message():
+    data = request.get_json()
+    
+    try:
+        # Extracción segura del mensaje entrante del prospecto
+        changes = data['entry'][0]['changes'][0]['value']
+        if 'messages' in changes:
+            mensaje_entrada = changes['messages'][0]
+            numero_remitente = mensaje_entrada['from']
+            texto_usuario = mensaje_entrada['text']['body'].lower()
             
-        return jsonify({"status": "EVENT_RECEIVED"}), 200
+            print(f"Mensaje recibido de {numero_remitente}: {texto_usuario}")
+            
+            # Cerebro comercial de Jeniffer (Neuro-ventas)
+            respuesta_texto = generar_respuesta_comercial(texto_usuario)
+            
+            # Disparo automático de respuesta por la API Cloud de Meta
+            enviar_mensaje_whatsapp(numero_remitente, respuesta_texto)
+            
+    except (KeyError, IndexError):
+        # Ignora eventos secundarios de entrega o lectura de WhatsApp
+        pass
+        
+    return jsonify({"status": "received"}), 200
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+def generar_respuesta_comercial(texto):
+    """
+    Motor de persuasión adaptado al Programa Clínico Cándida Zero.
+    Ataca dolores críticos: fatiga crónica, ansiedad por carbohidratos e inflamación.
+    """
+    texto = texto.strip()
+    
+    # Intención: Saludo o información general del programa
+    if any(palabra in texto for palabra in ["hola", "info", "información", "precio", "programa", "cándida", "candida"]):
+        return (
+            "¡Hola! Qué gusto saludarte. Soy Jeniffer, asesora oficial del *Programa Clínico Cándida Zero*.\n\n" +
+            "¿Sientes fatiga constante, inflamación o una ansiedad incontrolable por los azúcares que no te deja avanzar? " +
+            "No estás sola, y tiene solución. Nuestro método clínico está diseñado para devolverte la energía vital y resetear tu salud digestiva de raíz.\n\n" +
+            "Escríbeme cuál es el síntoma que más te afecta hoy (ej. *hinchazón*, *cansancio* o *ansiedad por dulces*) para darte el plan exacto que necesitas."
+        )
+    
+    # Dolor: Ansiedad por azúcar / carbohidratos
+    elif any(palabra in texto for palabra in ["azucar", "dulce", "ansiedad", "carbohidratos", "comida"]):
+        return (
+            "Esa ansiedad voraz es el hongo de la cándida exigiendo combustible. ¡Es hora de cortar ese ciclo de raíz!\n\n" +
+            "Con el *Programa Clínico Cándida Zero* reprogramamos tu metabolismo en pocas semanas para eliminar esos antojos sin pasar hambre.\n\n" +
+            "¿Te gustaría conocer los detalles de nuestros paquetes y comenzar tu transformación esta misma semana? Responde *SÍ* para enviarte la guía de inicio."
+        )
+        
+    # Dolor: Cansancio / Fatiga crónica
+    elif any(palabra in texto for palabra in ["cansancio", "fatiga", "energia", "cansada", "sin fuerza"]):
+        return (
+            "La fatiga crónica es la señal de alerta número uno de que tu microbiota está desbalanceada. " +
+            "Recuperar tu energía y claridad mental es totalmente posible con nuestro protocolo clínico guiado.\n\n" +
+            "¿Estás lista para volver a despertar con vitalidad? Responde *QUIERO MI CAMBIO* y te indico los pasos para acceder al programa."
+        )
+        
+    # Dolor: Inflamación / Problemas estomacales
+    elif any(palabra in texto for palabra in ["inflamacion", "hinchazon", "estomago", "abdomen", "digestión", "gases"]):
+        return (
+            "Esa inflamación y pesadez estomacal después de comer son el reflejo directo de la disbiosis intestinal. " +
+            "El *Programa Cándida Zero* sella tu intestino y elimina el sobrecrecimiento bacteriano de forma natural.\n\n" +
+            "Imagina volver a sentir ligereza y bienestar todos los días. Escribe *VALOR* para conocer cómo iniciar hoy mismo."
+        )
+        
+    # Cierre / Interés en adquirir
+    elif any(palabra in texto for palabra in ["sí", "si", "quiero", "valor", "comprar", "precio"]):
+        return (
+            "¡Excelente decisión! El éxito no es un accidente y dar este paso cambiará tu salud para siempre.\n\n" +
+            "Para entregarte el acceso inmediato al *Programa Clínico Cándida Zero* y activar tu acompañamiento personalizado, haz clic en el siguiente enlace de inscripción segura o dime a qué hora prefieres que te contactemos por aquí."
+        )
+        
+    # Respuesta por defecto empática (Mantiene el gancho comercial)
+    else:
+        return (
+            "Te entiendo perfectamente. Cada cuerpo nos habla a su manera, y en el *Programa Clínico Cándida Zero* tenemos el protocolo exacto para ti.\n\n" +
+            "Cuéntame brevemente: ¿cuánto tiempo llevas luchando con estos síntomas? Estoy aquí para ayudarte a recuperar tu bienestar."
+        )
+
+def enviar_mensaje_whatsapp(destinatario, texto):
+    """
+    Envía la respuesta utilizando la API Cloud oficial de Meta v26.0 con autenticación Bearer permanente.
+    """
+    url = f"https://graph.facebook.com/v26.0/{PHONE_NUMBER_ID}/messages"
+    
+    headers = {
+        "Authorization": f"Bearer {WHATSAPP_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": destinatario,
+        "type": "text",
+        "text": {
+            "body": texto
+        }
+    }
+    
+    try:
+        response = requests.post(url, json=payload, headers=headers)
+        print(f"Respuesta enviada a Meta: {response.status_code} - {response.text}")
+    except Exception as e:
+        print(f"Error al enviar mensaje a WhatsApp: {str(e)}")
+
+if __name__ == '__main__':
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
