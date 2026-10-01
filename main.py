@@ -12,13 +12,12 @@ VERIFY_TOKEN = "zero_candi_secure_token_2026"
 WHATSAPP_TOKEN = "EAAUV6d9auksBSrAT7SksGzBG8sa6EvodZC4oPePCK8DCKszquGSeNuKEZBrCSqZCWYRe2OQ7L93DxUfMUtiDQt21cUZA3pJQwtO1T6QTHvItO0pTLDMsyjfdwKFUaDwOdx8QVyNhQc92ZCyZCbcpWUOiZBgmVyD7BY2pU0UbMpf1qxTzmO4LcdrPhJd6VdO6JD8HAZDZD"
 PHONE_NUMBER_ID = "1316482411550878"
 
-# Memoria de estado comercial por número de teléfono
-# Estados posibles: 'inicio', 'esperando_sintoma', 'ofreciendo_programa', 'esperando_pago', 'completado'
+# Memoria de estado comercial y datos del cliente por número de teléfono
 USUARIOS_ESTADO = {}
 
 @app.route('/', methods=['GET'])
 def home():
-    return "¡Jeniffer - Cándida Zero Bot Inteligente V2 Activo 24/7!", 200
+    return "¡Jeniffer - Cándida Zero Bot Comercial Optimizado Activo 24/7!", 200
 
 @app.route('/webhook', methods=['GET'])
 def verify_webhook():
@@ -47,9 +46,9 @@ def receive_message():
             elif tipo_mensaje == 'image':
                 texto_usuario = "[COMPROBANTE_ENVIADO]"
             
-            print(f"[{tipo_mensaje.upper()}] Recibido de {numero_remitente}: {texto_usuario}")
+            print(f"[{tipo_mensaje.upper()}] Recibido de {numero_remitented}: {texto_usuario}")
             
-            # Obtener o inicializar el estado del usuario
+            # Inicializar estado si no existe
             if numero_remitente not in USUARIOS_ESTADO:
                 USUARIOS_ESTADO[numero_remitente] = {
                     "paso": "inicio",
@@ -57,7 +56,7 @@ def receive_message():
                     "sintoma": ""
                 }
             
-            # Procesar la máquina de ventas con flujo dinámico
+            # Procesar el motor de ventas optimizado
             respuesta_texto = motor_neuro_ventas(numero_remitente, texto_usuario)
             
             # Pausa humana de 10 segundos para máxima naturalidad
@@ -75,40 +74,39 @@ def receive_message():
 
 def motor_neuro_ventas(numero, texto):
     """
-    Máquina de estados comercial de alta conversión basada en neuro-ventas.
-    Evita bucles y garantiza que la conversación avance de forma fluida.
+    Máquina de ventas optimizada. Mantiene tu flujo original intacto y 
+    añade capacidad de respuesta experta ante dudas u objeciones sobre el producto.
     """
     texto_lower = texto.lower()
     estado_actual = USUARIOS_ESTADO[numero]["paso"]
     
-    # 1. SI MANDA UN COMPROBANTE O FOTO O PALABRAS DE PAGO
+    # 1. SI ENVÍA UN COMPROBANTE DE PAGO
     if "[comprobante_enviado]" in texto or "banco" in texto_lower or "transferencia" in texto_lower or "pago móvil" in texto_lower or "listo el pago" in texto_lower or "pagado" in texto_lower:
         USUARIOS_ESTADO[numero]["paso"] = "completado"
         return (
             "¡Comprobante verificado con éxito! Felicidades por dar este gran paso hacia tu bienestar. 🚀\n\n"
-            "Tu usuario ya está activo en nuestra app:\n"
+            "Su usuario ya está activo en nuestra app:\n"
             "https://candida-zero.vercel.app/\n\n"
-            "📱 Abre el enlace desde tu teléfono para ver tu protocolo y recetario. ¿Me confirmas por favor si logró ingresar sin problemas?"
+            "📱 Abra el enlace desde su teléfono para ver su protocolo y recetario. ¿Me confirma por favor si logró ingresar sin problemas?"
         )
 
-    # 2. MANEJO DE AGRADECIMIENTOS O DUDAS POST-VENTA
+    # 2. MANEJO DE AGRADECIMIENTOS O SOPORTE POST-VENTA
     if estado_actual == "completado" or "gracias" in texto_lower or "muchas gracias" in texto_lower:
         return (
-            "¡De nada con todo el corazón! Recuerda que estoy aquí para acompañarte en tu sanación. "
+            "¡De nada con todo el corazón! Recuerde que no está sola en este proceso. "
             "Dime, ¿pudiste ingresar a la app sin inconvenientes o tienes alguna duda sobre cómo aplicarte los óvulos?"
         )
 
-    # 3. MÁQUINA DE ESTADOS SECUENCIAL DEL EMBUDO
+    # 3. FLUJO COMERCIAL ORIGINAL MEJORADO
     if estado_actual == "inicio":
-        # Guardamos de manera flexible el tiempo que respondió
+        # Guardamos el tiempo que indicó la usuaria
         USUARIOS_ESTADO[numero]["tiempo"] = texto
         USUARIOS_ESTADO[numero]["paso"] = "esperando_sintoma"
         
-        # Respuesta empática validando exactamente lo que dijo (sin contradecirla con números fijos)
         return (
-            f"¡{texto} es demasiado tiempo cargando con ese tormento! Te entiendo perfectamente, yo pasé por ese mismo infierno de infecciones recurrentes y sé lo agotador que es.\n\n"
-            "Los tratamientos comunes fallan porque solo tapan el síntoma. Nuestro sistema de ácido bórico de grado médico equilibra el pH y sella tu microbiota.\n\n"
-            "Cuéntame, además del tiempo, ¿qué síntoma (como flujo, picazón u olor) es el que más te incomoda en este momento?"
+            f"¡{texto} es demasiado tiempo cargando con ese tormento! Los tratamientos comunes fallan porque solo tapan el síntoma. "
+            "Nuestro sistema de ácido bórico de grado médico equilibra el pH y sella tu microbiota.\n\n"
+            "¿Usted quiere recuperar su salud íntima y sentirse limpia y segura de una vez por todas?"
         )
 
     elif estado_actual == "esperando_sintoma":
@@ -116,16 +114,14 @@ def motor_neuro_ventas(numero, texto):
         USUARIOS_ESTADO[numero]["paso"] = "ofreciendo_programa"
         
         return (
-            "¡Ese síntoma es precisamente el que vamos a erradicar de raíz! Ya basta de pañitos de agua tibia.\n\n"
-            "¿Usted quiere recuperar su salud íntima, despedirse del mal olor y sentirse limpia y segura de una vez por todas?"
+            "¡Esa es la decisión de una mujer valiente! 🔥\n\n"
+            "Normalmente este programa cuesta 25$, pero hoy para que comiences tu recuperación total te doy acceso al *PROGRAMA ZERO CANDI* por solo *7.99$ (Tasa BCV)*."
         )
 
     elif estado_actual == "ofreciendo_programa" or "si" in texto_lower or "claro" in texto_lower or "quiero" in texto_lower:
         USUARIOS_ESTADO[numero]["paso"] = "esperando_pago"
         
         return (
-            "¡Esa es la decisión de una mujer valiente! 🔥\n\n"
-            "Normalmente este programa cuesta 25$, pero hoy para que comiences tu recuperación total te doy acceso al *PROGRAMA ZERO CANDI* por solo *7.99$ (Tasa BCV)*.\n\n"
             "💳 *Datos de Pago Móvil (Mercantil):*\n"
             "• Banco: Mercantil (0105)\n"
             "• Cédula: 25.771.166\n"
@@ -135,10 +131,22 @@ def motor_neuro_ventas(numero, texto):
         )
 
     else:
-        # Fallback inteligente por si escriben cualquier otra duda o objeción
+        # 4. MANEJO INTELIGENTE DE OBJECIONES Y DUDAS ("qué me estás vendiendo", etc.)
+        if "que es" in texto_lower or "vending" in texto_lower or "vendes" in texto_lower or "programa" in texto_lower or "consiste" in texto_lower:
+            return (
+                "Te explico con todo detalle: el *PROGRAMA ZERO CANDI* es un protocolo clínico digital diseñado para erradicar la cándida de raíz.\n\n"
+                "Incluye:\n"
+                "1️⃣ El protocolo exacto de uso de óvulos de ácido bórico de grado médico para sellar tu microbiota.\n"
+                "2️⃣ El recetario anti-cándida exclusivo para cortar el alimento del hongo desde la alimentación.\n"
+                "3️⃣ Acceso privado a nuestra plataforma web 24/7.\n\n"
+                "Todo esto por solo 7.99$. ¿Estás lista para hacer tu pago móvil y comenzar tu sanación hoy?"
+            )
+        
+        # Si hace cualquier otra pregunta, mantenemos la oferta activa y guiamos al pago
         return (
-            "Te entiendo perfectamente. Estoy aquí para resolver cualquier duda que tengas sobre el protocolo de ácido bórico o la alimentación.\n\n"
-            "¿Estás lista para adquirir tu acceso al *Programa Zero Candi* por solo 7.99$ y empezar tu sanación hoy mismo?"
+            "Te entiendo perfectamente. Yo pasé por ese mismo infierno y sé lo importante que es sanar de raíz.\n\n"
+            "El *Programa Zero Candi* te entrega el paso a paso exacto en nuestra app por solo 7.99$. "
+            "¿Deseas que te comparta los datos de pago móvil para activar tu acceso de inmediato?"
         )
 
 def enviar_mensaje_whatsapp(destinatario, texto):
