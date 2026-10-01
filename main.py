@@ -12,13 +12,13 @@ VERIFY_TOKEN = "zero_candi_secure_token_2026"
 WHATSAPP_TOKEN = "EAAUV6d9auksBSrAT7SksGzBG8sa6EvodZC4oPePCK8DCKszquGSeNuKEZBrCSqZCWYRe2OQ7L93DxUfMUtiDQt21cUZA3pJQwtO1T6QTHvItO0pTLDMsyjfdwKFUaDwOdx8QVyNhQc92ZCyZCbcpWUOiZBgmVyD7BY2pU0UbMpf1qxTzmO4LcdrPhJd6VdO6JD8HAZDZD"
 PHONE_NUMBER_ID = "1316482411550878"
 
-# Historial de chat por número de teléfono para memoria fluida y continua
-# Estructura: { "numero": [ {"role": "user"/"assistant", "content": "mensaje"}, ... ] }
-HISTORIAL_CONVERSACIONES = {}
+# Memoria de estado comercial por número de teléfono
+# Estados posibles: 'inicio', 'esperando_sintoma', 'ofreciendo_programa', 'esperando_pago', 'completado'
+USUARIOS_ESTADO = {}
 
 @app.route('/', methods=['GET'])
 def home():
-    return "¡Jeniffer - Cándida Zero Bot Inteligente Activo 24/7!", 200
+    return "¡Jeniffer - Cándida Zero Bot Inteligente V2 Activo 24/7!", 200
 
 @app.route('/webhook', methods=['GET'])
 def verify_webhook():
@@ -45,30 +45,24 @@ def receive_message():
             if tipo_mensaje == 'text':
                 texto_usuario = mensaje_entrada['text']['body'].strip()
             elif tipo_mensaje == 'image':
-                texto_usuario = "[El cliente ha enviado una imagen o comprobante de pago]"
+                texto_usuario = "[COMPROBANTE_ENVIADO]"
             
             print(f"[{tipo_mensaje.upper()}] Recibido de {numero_remitente}: {texto_usuario}")
             
-            # Inicializar historial si no existe
-            if numero_remitente not in HISTORIAL_CONVERSACIONES:
-                HISTORIAL_CONVERSACIONES[numero_remitente] = []
+            # Obtener o inicializar el estado del usuario
+            if numero_remitente not in USUARIOS_ESTADO:
+                USUARIOS_ESTADO[numero_remitente] = {
+                    "paso": "inicio",
+                    "tiempo": "",
+                    "sintoma": ""
+                }
             
-            # Agregar mensaje del usuario al historial
-            HISTORIAL_CONVERSACIONES[numero_remitente].append({"role": "user", "content": texto_usuario})
+            # Procesar la máquina de ventas con flujo dinámico
+            respuesta_texto = motor_neuro_ventas(numero_remitente, texto_usuario)
             
-            # Mantener solo los últimos 15 intercambios para rendimiento extremo
-            if len(HISTORIAL_CONVERSACIONES[numero_remitente]) > 30:
-                HISTORIAL_CONVERSACIONES[numero_remitente] = HISTORIAL_CONVERSACIONES[numero_remitente][-30:]
-            
-            # Procesar cerebro comercial con inteligencia artificial y contexto
-            respuesta_texto = motor_neuro_ventas_ia(HISTORIAL_CONVERSACIONES[numero_remitente])
-            
-            # Agregar respuesta al historial
-            HISTORIAL_CONVERSACIONES[numero_remitente].append({"role": "assistant", "content": respuesta_texto})
-            
-            # Pausa humana de 12 segundos para máxima naturalidad
-            print("Aplicando pausa humana de 12 segundos...")
-            time.sleep(12)
+            # Pausa humana de 10 segundos para máxima naturalidad
+            print("Aplicando pausa humana de 10 segundos...")
+            time.sleep(10)
             
             # Enviar mensaje a WhatsApp
             enviar_mensaje_whatsapp(numero_remitente, respuesta_texto)
@@ -79,82 +73,73 @@ def receive_message():
         
     return jsonify({"status": "received"}), 200
 
-def motor_neuro_ventas_ia(historial):
+def motor_neuro_ventas(numero, texto):
     """
-    Cerebro comercial avanzado inspirado en Margarita Pasos y la experiencia personal de Jeniffer.
-    Utiliza el historial completo para mantener contexto continuo y responder con empatía y precisión.
+    Máquina de estados comercial de alta conversión basada en neuro-ventas.
+    Evita bucles y garantiza que la conversación avance de forma fluida.
     """
+    texto_lower = texto.lower()
+    estado_actual = USUARIOS_ESTADO[numero]["paso"]
     
-    # Prompt del Sistema (Directrices Maestras para el Bot)
-    system_prompt = """
-    Eres Jeniffer, creadora del programa 'Cándida Zero' y experta en salud íntima femenina y neuro-ventas.
-    Te comunicas por WhatsApp con mujeres de Venezuela que sufren de infecciones vaginales recurrentes (cándida, flujo blanco, picazón, etc.).
-    
-    TUS DIRECTRICES DE ORO:
-    1. HISTORIA DE AUTORIDAD Y EMPATÍA: Habla desde la experiencia real. Di siempre que tú pasaste por ese mismo infierno, gastaste dinero en farmacias y cremas sin ver resultados, hasta que creaste este protocolo. Valida exactamente lo que la clienta te diga (si dice 6 meses, menciona sus 6 meses con empatía).
-    2. TONO: Cercano, cálido, firme, empoderador y de absoluta confianza (como una hermana mayor o una mentora que ya venció el problema).
-    3. MANEJO DE DUDAS Y SOPORTE TOTAL: Puedes responder cualquier duda técnica o clínica que tenga la clienta (cómo usar los óvulos de ácido bórico, el recetario anti-cándida, la alimentación, etc.) con base en medicina natural y bienestar.
-    4. FLUJO COMERCIAL Y CIERRE:
-       - Si muestra interés o dolor, profundiza en la solución.
-       - Si pregunta el precio o muestra disposición, presenta la oferta irresistible: El PROGRAMA ZERO CANDI completo (Protocolo exacto de Ácido Bórico + Recetario Anti-Cándida de 15 opciones + Checklist diario + Garantía blindada de 20 días) por solo 7.99$ (Tasa BCV) (Precio regular 25$).
-       - Cuando acepten comprar (con un "sí", "estoy lista", etc.), dales de inmediato los datos de pago móvil:
-         Banco: Mercantil
-         Cédula: 25771166
-         Teléfono: 04121582154
-         Monto: 7.99$
-         Y pídeles el comprobante.
-       - Si envían un comprobante o foto, felicítalas y entrégales el enlace de acceso a la app: https://candida-zero.vercel.app/
-    5. GESTIÓN DE POST-VENTA Y AGRADECIMIENTOS: Si la clienta dice "gracias", responde con calidez, recuérdale que estás para apoyarla en su sanación y pregúntale si pudo ingresar a la app o si tiene alguna duda sobre cómo aplicarse los óvulos. Nunca repitas un mensaje automatizado de forma robótica si ya pagó; lee el contexto y responde de forma natural.
-    6. OBJECIONES DE DINERO: Si dicen que no tienen dinero o deben esperar quincena, muéstrate comprensiva y ofréceles apartarles el cupo promocional para esa fecha.
-    7. BREVEDAD PARA WHATSAPP: Usa párrafos cortos, viñetas limpias y emojis moderados para una lectura rápida en el móvil.
-    """
-
-    # Construir payload para la API de IA (puedes conectar OpenAI o Google AI Studio aquí)
-    # Por seguridad y estabilidad, simularemos la llamada estructurada con el contexto integrado o endpoint LLM.
-    # Nota: Si usas OpenAI o Google Gemini API en tu servidor, insertas tu cliente aquí.
-    # Ejemplo de estructura de mensajes para enviar al modelo:
-    
-    mensajes_completos = [{"role": "system", "content": system_prompt}] + historial
-    
-    # Si tienes configurada tu API Key de OpenAI o Gemini, puedes hacer la petición real. 
-    # Para asegurar que tu bot funcione de inmediato con la lógica exacta, aquí tienes el conector robusto o puedes usar la API de OpenAI/Gemini:
-    
-    try:
-        # Ejemplo usando OpenAI (puedes cambiar la URL o SDK según prefieras)
-        openai_api_key = os.environ.get("OPENAI_API_KEY", "")
-        if openai_api_key:
-            headers = {
-                "Authorization": f"Bearer {openai_api_key}",
-                "Content-Type": "application/json"
-            }
-            payload = {
-                "model": "gpt-4o-mini",
-                "messages": mensajes_completos,
-                "temperature": 0.7,
-                "max_tokens": 500
-            }
-            response = requests.post("https://api.openai.com/v1/chat/completions", json=payload, headers=headers, timeout=20)
-            if response.status_code == 200:
-                return response.json()['choices'][0]['message']['content'].strip()
-        
-        # Fallback inteligente con heurística de contexto si no está activa la API key de LLM en este segundo:
-        ultimo_mensaje = historial[-1]["content"].lower()
-        
-        if "gracias" in ultimo_mensaje or "gracia" in ultimo_mensaje:
-            return "¡De nada con todo el corazón! Recuerda que no estás sola en esto. Dime, ¿pudiste abrir el enlace de la app o tienes alguna duda con la aplicación de los óvulos?"
-        
-        if "óvulo" in ultimo_mensaje or "ovulo" in ultimo_mensaje or "aplicar" in ultimo_mensaje:
-            return "Los óvulos de ácido bórico de grado médico se colocan preferiblemente en la noche antes de dormir, bien arriba en la vagina. Te ayudan a equilibrar el pH de forma inmediata y eliminar el hongo. ¿Tienes alguna duda sobre cómo prepararlos o conseguirlos?"
-            
+    # 1. SI MANDA UN COMPROBANTE O FOTO O PALABRAS DE PAGO
+    if "[comprobante_enviado]" in texto or "banco" in texto_lower or "transferencia" in texto_lower or "pago móvil" in texto_lower or "listo el pago" in texto_lower or "pagado" in texto_lower:
+        USUARIOS_ESTADO[numero]["paso"] = "completado"
         return (
-            "Te entiendo perfectamente, yo pasé por ese mismo infierno de infecciones recurrentes y sé lo agotador que es. " +
-            "Por eso diseñé Cándida Zero: para ir a la raíz del problema y devolverte tu tranquilidad íntima. " +
-            "Cuéntame, ¿qué síntoma es el que más te incomoda en este momento para darte la solución exacta?"
+            "¡Comprobante verificado con éxito! Felicidades por dar este gran paso hacia tu bienestar. 🚀\n\n"
+            "Tu usuario ya está activo en nuestra app:\n"
+            "https://candida-zero.vercel.app/\n\n"
+            "📱 Abre el enlace desde tu teléfono para ver tu protocolo y recetario. ¿Me confirmas por favor si logró ingresar sin problemas?"
         )
 
-    except Exception as e:
-        print(f"Error en motor IA: {str(e)}")
-        return "¡Hola! Estoy aquí para ayudarte a recuperar tu salud íntima de raíz. Cuéntame, ¿cuánto tiempo llevas lidiando con esta infección?"
+    # 2. MANEJO DE AGRADECIMIENTOS O DUDAS POST-VENTA
+    if estado_actual == "completado" or "gracias" in texto_lower or "muchas gracias" in texto_lower:
+        return (
+            "¡De nada con todo el corazón! Recuerda que estoy aquí para acompañarte en tu sanación. "
+            "Dime, ¿pudiste ingresar a la app sin inconvenientes o tienes alguna duda sobre cómo aplicarte los óvulos?"
+        )
+
+    # 3. MÁQUINA DE ESTADOS SECUENCIAL DEL EMBUDO
+    if estado_actual == "inicio":
+        # Guardamos de manera flexible el tiempo que respondió
+        USUARIOS_ESTADO[numero]["tiempo"] = texto
+        USUARIOS_ESTADO[numero]["paso"] = "esperando_sintoma"
+        
+        # Respuesta empática validando exactamente lo que dijo (sin contradecirla con números fijos)
+        return (
+            f"¡{texto} es demasiado tiempo cargando con ese tormento! Te entiendo perfectamente, yo pasé por ese mismo infierno de infecciones recurrentes y sé lo agotador que es.\n\n"
+            "Los tratamientos comunes fallan porque solo tapan el síntoma. Nuestro sistema de ácido bórico de grado médico equilibra el pH y sella tu microbiota.\n\n"
+            "Cuéntame, además del tiempo, ¿qué síntoma (como flujo, picazón u olor) es el que más te incomoda en este momento?"
+        )
+
+    elif estado_actual == "esperando_sintoma":
+        USUARIOS_ESTADO[numero]["sintoma"] = texto
+        USUARIOS_ESTADO[numero]["paso"] = "ofreciendo_programa"
+        
+        return (
+            "¡Ese síntoma es precisamente el que vamos a erradicar de raíz! Ya basta de pañitos de agua tibia.\n\n"
+            "¿Usted quiere recuperar su salud íntima, despedirse del mal olor y sentirse limpia y segura de una vez por todas?"
+        )
+
+    elif estado_actual == "ofreciendo_programa" or "si" in texto_lower or "claro" in texto_lower or "quiero" in texto_lower:
+        USUARIOS_ESTADO[numero]["paso"] = "esperando_pago"
+        
+        return (
+            "¡Esa es la decisión de una mujer valiente! 🔥\n\n"
+            "Normalmente este programa cuesta 25$, pero hoy para que comiences tu recuperación total te doy acceso al *PROGRAMA ZERO CANDI* por solo *7.99$ (Tasa BCV)*.\n\n"
+            "💳 *Datos de Pago Móvil (Mercantil):*\n"
+            "• Banco: Mercantil (0105)\n"
+            "• Cédula: 25.771.166\n"
+            "• Teléfono: 0412-1582154\n"
+            "• Monto: 7.99$ (o su equivalente en Bs a tasa BCV)\n\n"
+            "📲 Realiza tu pago y envíame por aquí el capture del comprobante para activar tu acceso inmediato."
+        )
+
+    else:
+        # Fallback inteligente por si escriben cualquier otra duda o objeción
+        return (
+            "Te entiendo perfectamente. Estoy aquí para resolver cualquier duda que tengas sobre el protocolo de ácido bórico o la alimentación.\n\n"
+            "¿Estás lista para adquirir tu acceso al *Programa Zero Candi* por solo 7.99$ y empezar tu sanación hoy mismo?"
+        )
 
 def enviar_mensaje_whatsapp(destinatario, texto):
     url = f"https://graph.facebook.com/v26.0/{PHONE_NUMBER_ID}/messages"
