@@ -2,11 +2,12 @@ from flask import Flask, request, jsonify
 import os
 import requests
 import time
+import threading
 
 app = Flask(__name__)
 
 # ====================================================================
-# CONFIGURACIÓN MAESTRA - WHATSAPP CLOUD API (CÁNDIDA ZERO)
+# CONFIGURACIÓN MAESTRA - WHATSAPP CLOUD API (CÁNDIDA ZERO - PRODUCCIÓN)
 # ====================================================================
 VERIFY_TOKEN = "zero_candi_secure_token_2026"
 WHATSAPP_TOKEN = "EAAUV6d9auksBSrAT7SksGzBG8sa6EvodZC4oPePCK8DCKszquGSeNuKEZBrCSqZCWYRe2OQ7L93DxUfMUtiDQt21cUZA3pJQwtO1T6QTHvItO0pTLDMsyjfdwKFUaDwOdx8QVyNhQc92ZCyZCbcpWUOiZBgmVyD7BY2pU0UbMpf1qxTzmO4LcdrPhJd6VdO6JD8HAZDZD"
@@ -17,7 +18,7 @@ USUARIOS_FASE = {}
 
 @app.route('/', methods=['GET'])
 def home():
-    return "¡Jeniffer - Cándida Zero Bot Activo y Operativo 24/7!", 200
+    return "¡Jeniffer - Cándida Zero Bot Activo y Operativo en Producción (Alta Concurrencia)! 🚀", 200
 
 @app.route('/webhook', methods=['GET'])
 def verify_webhook():
@@ -32,6 +33,8 @@ def verify_webhook():
 def receive_message():
     data = request.get_json()
     
+    # Respondemos inmediatamente a Meta con 200 OK para evitar timeouts en la API
+    # y procesamos la lógica en un hilo secundario para alta velocidad.
     try:
         changes = data['entry'][0]['changes'][0]['value']
         if 'messages' in changes:
@@ -48,37 +51,41 @@ def receive_message():
             
             print(f"[{tipo_mensaje.upper()}] Recibido de {numero_remitente}: {texto_usuario}")
             
-            # Obtener fase actual
-            fase_actual = USUARIOS_FASE.get(numero_remitente, 0)
-            
-            # Si mandó una imagen (comprobante), forzamos fase de entrega
-            if tipo_mensaje == 'image':
-                fase_actual = 4
-            
-            # Procesar cerebro comercial
-            respuesta_texto, nueva_fase = motor_neuro_ventas(texto_usuario, fase_actual)
-            
-            # Actualizar fase en memoria
-            USUARIOS_FASE[numero_remitente] = nueva_fase
-            
-            # Retraso humano de 15 segundos para máxima naturalidad
-            print("Aplicando pausa humana de 15 segundos...")
-            time.sleep(15)
-            
-            # Enviar mensaje a WhatsApp
-            enviar_mensaje_whatsapp(numero_remitente, respuesta_texto)
+            # Lanzamos el proceso en un hilo para no bloquear el servidor ante 300+ usuarias
+            hilo = threading.Thread(target=procesar_y_responder, args=(numero_remitente, texto_usuario, tipo_mensaje))
+            hilo.start()
             
     except (KeyError, IndexError) as e:
-        print(f"Error procesando webhook: {str(e)}")
+        print(f"Error procesando webhook structure: {str(e)}")
         pass
         
     return jsonify({"status": "received"}), 200
+
+def procesar_y_responder(numero_remitente, texto_usuario, tipo_mensaje):
+    # Obtener fase actual
+    fase_actual = USUARIOS_FASE.get(numero_remitente, 0)
+    
+    # Si mandó una imagen (comprobante), forzamos fase de entrega
+    if tipo_mensaje == 'image':
+        fase_actual = 4
+    
+    # Procesar cerebro comercial
+    respuesta_texto, nueva_fase = motor_neuro_ventas(texto_usuario, fase_actual)
+    
+    # Actualizar fase en memoria
+    USUARIOS_FASE[numero_remitente] = nueva_fase
+    
+    # Pausa humana en segundo plano (no bloquea otras peticiones concurrentes)
+    time.sleep(8)
+    
+    # Enviar mensaje a WhatsApp
+    enviar_mensaje_whatsapp(numero_remitente, respuesta_texto)
 
 def motor_neuro_ventas(texto, fase):
     """
     Motor de neuro-ventas blindado: sin bucles repetitivos y con respuestas dinámicas a cualquier input.
     """
-    # 0. Manejo de agradecimientos o confirmaciones de que abrió la app (Cierre de ciclo post-venta)
+    # 0. Manejo de agradecimientos o confirmaciones de que abrió la app
     if any(p in texto for p in ["gracias", "excelente", "abrió", "abrio", "perfecto", "listo", "comprendido", "muy amable"]):
         if fase >= 4:
             return (
@@ -138,7 +145,7 @@ def motor_neuro_ventas(texto, fase):
     elif fase == 3:
         return (
             "¡Esa es la decisión de una mujer valiente!\n\n" +
-            "Normalmente este programa cuesta 25$, pero hoy para que comiences tu recuperación total te doy acceso al **PROGRAMA ZERO CANDI** por solo **7.99$**.\n\n" +
+            "Normalmente este programa cuesta 25$, pero hoy para que comiences tu recuperación total te doy acceso al **PROGRAMA ZERO CANDI** por solo **6.823 Bs**.\n\n" +
             "🧬 **Lo que incluye tu acceso inmediato:**\n\n" +
             "✅ **Protocolo exacto de Ácido Bórico:** Te enseñamos qué comprar y cómo usarlo de forma segura para limpiar y restaurar tu zona íntima.\n" +
             "🥗 **Recetario Anti-Cándida (15 opciones):** Comidas deliciosas sin azúcares ni harinas para cortar el alimento del hongo desde la cocina.\n" +
@@ -167,7 +174,7 @@ def motor_neuro_ventas(texto, fase):
             "📱 Abra el enlace desde su teléfono para ver su protocolo y recetario. ¿Me confirma por favor si logró ingresar sin problemas?"
         ), 4
 
-    # COMODÍN INTELIGENTE ANTIBUCLES (Para cualquier texto fuera de guion)
+    # COMODÍN INTELIGENTE ANTIBUCLES
     else:
         return (
             "Le entiendo perfectamente. Lo más importante ahora es cortar el problema de raíz regulando su pH íntimo de forma clínica con nuestro programa de 6.823 Bs. " +
