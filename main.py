@@ -145,7 +145,7 @@ def motor_neuro_ventas(texto, fase):
     elif fase == 3:
         return (
             "¡Esa es la decisión de una mujer valiente!\n\n" +
-            "Normalmente este programa cuesta 25$, pero hoy para que comiences tu recuperación total te doy acceso al **PROGRAMA ZERO CANDI** por solo **6.823 Bs**.\n\n" +
+            "Normalmente este programa cuesta 25$, pero hoy para que comiences tu recuperación total te doy acceso al **PROGRAMA ZERO CANDI** por solo **7.99$**.\n\n" +
             "🧬 **Lo que incluye tu acceso inmediato:**\n\n" +
             "✅ **Protocolo exacto de Ácido Bórico:** Te enseñamos qué comprar y cómo usarlo de forma segura para limpiar y restaurar tu zona íntima.\n" +
             "🥗 **Recetario Anti-Cándida (15 opciones):** Comidas deliciosas sin azúcares ni harinas para cortar el alimento del hongo desde la cocina.\n" +
